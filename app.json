@@ -21,10 +21,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.masteragb.chamberofsecrets"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ed88f7ce-f9ac-4587-a9c4-13b147677e4e"
+      }
+    },
+    "owner": "masteragb"
   }
 }
