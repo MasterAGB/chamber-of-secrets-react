@@ -1,5 +1,3 @@
-// ClassRegistry.js
-
 class ClassRegistry {
     constructor() {
         if (!ClassRegistry.instance) {
@@ -10,18 +8,18 @@ class ClassRegistry {
         return ClassRegistry.instance;
     }
 
-    get getUserId() {
+    // Change from get to a regular method
+    getUserId() {
         return this._userId;
     }
 
-    set setUserId(newUserId) {
+    // Change from set to a regular method
+    setUserId(newUserId) {
         this._userId = newUserId;
     }
-
-    // ... other getters and setters for different properties
 }
 
 const classRegistryInstance = new ClassRegistry();
-Object.freeze(classRegistryInstance);
+
 
 export default classRegistryInstance;

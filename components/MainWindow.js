@@ -1,29 +1,52 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import classRegistryInstance from '../logic/ClassRegistry';
-import VaultOperations from '../logic/VaultOperations';
+import vaultOperationsInstance from '../logic/VaultOperations';
 
-const MainWindow = () => {
+const MainWindow = ({ navigation }) => {
     const [newLogin, setNewLogin] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [existingLogin, setExistingLogin] = useState('');
     const [existingPassword, setExistingPassword] = useState('');
 
+    // State to hold error messages
+    const [errorRegister, setErrorRegister] = useState('');
+    const [errorLogin, setErrorLogin] = useState('');
 
-    const vaultOps = new VaultOperations({ navigation });
-    console.log('displayUserTable0');
+    vaultOperationsInstance.setNavigation(navigation);
+
     // Function to handle the creation of a new vault
     const createNewVault = () => {
-        vaultOps.createNewVault(newLogin, newPassword);
+        vaultOperationsInstance.createNewVault(newLogin, newPassword)
+            .then(() => {
+                setNewLogin('');
+                setNewPassword('');
+                setErrorLogin('');
+                setErrorRegister('');
+                navigation.navigate('UserPasswordTable');
+            })
+            .catch((e) => {
+                setErrorRegister(e.message);
+            });
     };
 
     // Function to handle accessing an existing vault
     const accessExistingVault = () => {
-        vaultOps.accessUserVault(existingLogin, existingPassword);
+        vaultOperationsInstance.accessUserVault(existingLogin, existingPassword)
+            .then(() => {
+                setExistingLogin('');
+                setExistingPassword('');
+                setErrorLogin('');
+                setErrorRegister('');
+                navigation.navigate('UserPasswordTable');
+            })
+            .catch((e) => {
+                setErrorLogin(e.message);
+            });
     };
     const displayUserTable = () => {
         console.log('displayUserTable1');
-        vaultOps.displayUserTable();
+        navigation.navigate('UserPasswordTable');
     };
 
     return (
@@ -37,6 +60,7 @@ const MainWindow = () => {
                 onChangeText={setNewLogin}
                 value={newLogin}
                 placeholder="Enter new login"
+                autoComplete="off" // Add this line
             />
             <TextInput
                 style={styles.input}
@@ -44,11 +68,16 @@ const MainWindow = () => {
                 secureTextEntry
                 value={newPassword}
                 placeholder="Enter new password"
+                autoComplete="off" // Add this line
             />
             <Button
                 title="Create Vault 🔒"
                 onPress={createNewVault}
             />
+            {/* Error message display */}
+            {errorRegister !== '' && (
+                <Text style={styles.errorText}>{errorRegister}</Text>
+            )}
 
             <Text style={styles.label}>Access an existing vault:</Text>
             <TextInput
@@ -56,6 +85,7 @@ const MainWindow = () => {
                 onChangeText={setExistingLogin}
                 value={existingLogin}
                 placeholder="Enter existing login"
+                autoComplete="off" // Add this line
             />
             <TextInput
                 style={styles.input}
@@ -63,11 +93,16 @@ const MainWindow = () => {
                 secureTextEntry
                 value={existingPassword}
                 placeholder="Enter existing password"
+                autoComplete="off" // Add this line
             />
             <Button
                 title="Load Key & Access Vault 🔑"
                 onPress={accessExistingVault}
             />
+            {/* Error message display */}
+            {errorLogin !== '' && (
+                <Text style={styles.errorText}>{errorLogin}</Text>
+            )}
 
             {/* If you have a developer button */}
              <Button
@@ -83,6 +118,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         padding: 20,
+        backgroundColor: '#FFF'
     },
     logoLabel: {
         fontSize: 24,
@@ -108,6 +144,11 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         borderRadius: 5,
         borderColor: '#ccc',
+    },
+    // Style for the error text
+    errorText: {
+        color: 'red',
+        textAlign: 'center',
     }
 });
 

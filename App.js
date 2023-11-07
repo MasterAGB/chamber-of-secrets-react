@@ -1,19 +1,31 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+
 import MainWindow from './components/MainWindow';
+import UserPasswordTable from './components/UserPasswordTable'; // Import other screens
 
 
-export default function App() {
-  return (
-      <View style={styles.container}>
-        <MainWindow />
-      </View>
-  );
+const Stack = createNativeStackNavigator();
+
+
+
+
+function App() {
+
+
+
+    return (
+        <NavigationContainer>
+            <Stack.Navigator>
+                <Stack.Screen name="MainWindow" component={MainWindow} />
+                <Stack.Screen name="UserPasswordTable" component={UserPasswordTable} />
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff'
-  },
-});
+export default App;
+

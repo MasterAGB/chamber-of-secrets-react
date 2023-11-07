@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+
 import classRegistryInstance from '../logic/ClassRegistry';
 class ImmuDB {
     constructor(apiKey, ledger, collection) {
@@ -69,16 +69,19 @@ class ImmuDB {
             key: key,
             table_data: [
                 {
+                    id: 1,
                     username: `${login}1`,
                     password: 'examplePassword1',
                     website: 'www.example1.com',
                 },
                 {
+                    id: 2,
                     username: `${login}2`,
                     password: 'examplePassword2',
                     website: 'www.example2.com',
                 },
                 {
+                    id: 3,
                     username: `${login}3`,
                     password: 'examplePassword3',
                     website: 'www.example3.com',
@@ -99,14 +102,14 @@ class ImmuDB {
 
         // Check for empty login or password
         if (!login || !password) {
-            Alert.alert('Error', 'Login and password fields must not be empty.');
+            vaultOperationsInstance.alert('Error', 'Login and password fields must not be empty.');
             return;
         }
 
         // Check if a vault with this login already exists
         const existingData = await this.getUserDataFromDatabase(login);
         if (existingData && existingData.revisions && existingData.revisions.length > 0) {
-            Alert.alert('Error', 'A vault with this login already exists.');
+            vaultOperationsInstance.alert('Error', 'A vault with this login already exists.');
             return;
         }
 
@@ -117,19 +120,22 @@ class ImmuDB {
             key: key,
             table_data: [
                 {
+                    id: 1,
                     username: `${login}1`,
                     password: 'examplePassword1',
                     website: 'www.example1.com',
                 },
                 {
+                    id: 2,
                     username: `${login}2`,
-                    'password': 'examplePassword2',
-                    'website': 'www.example2.com'
+                    password: 'examplePassword2',
+                    website: 'www.example2.com'
                 },
                 {
+                    id: 3,
                     username: `${login}3`,
-                    'password': 'examplePassword3',
-                    'website': 'www.example3.com'
+                    password: 'examplePassword3',
+                    website: 'www.example3.com'
                 }
             ]
         };
@@ -137,12 +143,12 @@ class ImmuDB {
         const responseJson = await this.saveDataToDatabase(data);
 
         if (!responseJson || !responseJson.documentId) {
-            Alert.alert('Error', 'Failed to create a new vault.');
+            vaultOperationsInstance.alert('Error', 'Failed to create a new vault.');
             return;
         }
 
         // Set the user ID in your state management system
-        this.setUserId(responseJson.documentId);
+        classRegistryInstance.setUserId(responseJson.documentId);
 
         // Save the key to a file using react-native-fs or a similar library
         // This will require the user to grant file system access permissions
@@ -150,7 +156,7 @@ class ImmuDB {
         // You need to define the method saveKeyToFile which will handle the file system operations
         this.saveKeyToFile(fileName, key);
 
-        Alert.alert('Success', `Successfully created the vault. Your ID is: ${responseJson.documentId}.`);
+        vaultOperationsInstance.alert('Success', `Successfully created the vault. Your ID is: ${responseJson.documentId}.`);
 
         // After creation, navigate to the user table or perform other actions as needed
         this.navigateToUserTable(); // Define this navigation function based on your routing logic
@@ -378,9 +384,15 @@ class ImmuDB {
                 body: JSON.stringify(data)
             });
 
-            if (!response.ok) {
+
+
+            if (!response.ok && response.status!==200) {
+                console.error("ERROR - status!=200");
+                console.log(response);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+
+
 
             const jsonResponse = await response.json();
             const revisions = jsonResponse.revisions || [];
@@ -389,9 +401,9 @@ class ImmuDB {
                 const document = revisions[0].document || {};
                 const tableData = document.table_data || [];
 
-                // Assuming you have a method to set the table data in your state
-                this.updateTableData(tableData); // This method should handle updating the React component state with the new table data
-
+                console.log("trying to update with tabledata:")
+                console.log(tableData)
+                return tableData;
             } else {
                 console.error("Error: Failed to populate table. Revisions empty.");
             }
@@ -400,14 +412,6 @@ class ImmuDB {
         }
     };
 
-// You would need to implement this method to handle updating the table data
-    updateTableData = (tableData) => {
-        // Update the state with the new table data
-        // For example, if using React state:
-        this.setState({ tableData });
-        // Or if using a state management library like Redux:
-        // this.props.dispatch(updateTableDataAction(tableData));
-    };
 
 
     // Assuming 'this' is bound correctly in the context where these methods are defined

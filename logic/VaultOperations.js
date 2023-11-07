@@ -1,18 +1,16 @@
 // VaultOperations.js
-
+import * as Sharing from 'expo-sharing';
 import immuDBInstance from '../api/ImmuDB';
 import classRegistryInstance from '../logic/ClassRegistry';
-import { Alert } from 'react-native';
+import {Alert, Platform} from 'react-native';
 import * as FileSystem from 'expo-file-system';
-import MainWindow from "../components/MainWindow"; // If you're using Expo
 
 class VaultOperations {
 // VaultOperations.js
 
     // Assuming navigation props are passed to your class in some way
-    constructor(props) {
-        // ... other initializations
-        this.navigation = props.navigation; // This assumes you have passed navigation props to this class
+    setNavigation(navigation) {
+        this.navigation = navigation;
     }
 
     generateSecureKey = (length = 32) => {
@@ -30,15 +28,13 @@ class VaultOperations {
     async createNewVault(login, password) {
         // Validate input
         if (!login || !password) {
-            Alert.alert('Error', 'Login and password fields must not be empty.');
-            return;
+            throw new Error('Login and password fields must not be empty.');
         }
 
         // Check for existing vault
         const existingData = await immuDBInstance.getUserDataFromDatabase(login);
         if (existingData && existingData.revisions && existingData.revisions.length > 0) {
-            Alert.alert('Error', 'A vault with this login already exists.');
-            return;
+            throw new Error('A vault with this login already exists.');
         }
 
         // Generate a secure key
@@ -47,27 +43,100 @@ class VaultOperations {
         // Attempt to save the new vault
         const responseJson = await immuDBInstance.saveNewVault(login, password, key);
 
+        console.log("Creating1");
         // Handle the response
         if (!responseJson || !responseJson.documentId) {
-            Alert.alert('Error', 'Failed to create a new vault.');
-            return;
+            throw new Error('Failed to create a new vault.');
         }
-
+        console.log("Creating2");
         // Set the user ID in your state management system
-        this.setUserId(responseJson.documentId); // Make sure to define setUserId
+        classRegistryInstance.setUserId(responseJson.documentId); // Make sure to define setUserId
 
-        // Save the key to a file
+
+// Save the key to a file
         const defaultFileName = `${login}_key.txt`;
+        console.log("file with key " + defaultFileName);
+
+// Function to save and share the file for Web
+        const saveAndShareForWeb = (content, fileName) => {
+            // Create a Blob from the content
+            const blob = new Blob([content], {type: 'text/plain'});
+
+            // Create a link element
+            const link = document.createElement('a');
+
+            // Set the download attribute with the filename
+            link.download = fileName;
+
+            // Create a URL for the Blob and set it as the href attribute
+            link.href = window.URL.createObjectURL(blob);
+
+            // Append the link to the DOM (it can be invisible)
+            document.body.appendChild(link);
+
+            // Simulate a click on the link to trigger the download
+            link.click();
+
+            // Remove the link from the DOM
+            document.body.removeChild(link);
+        };
+
+        // Function to prompt the user to confirm they have saved the key
+        const confirmKeySave = () => {
+            return new Promise((resolve, reject) => {
+                // Here you would implement platform-specific confirmation dialog
+                if (Platform.OS === 'web') {
+                    if (window.confirm('Please confirm that you have saved the key file.')) {
+                        resolve();
+                    } else {
+                        reject(new Error('The key file must be saved before you can proceed.'));
+                    }
+                } else {
+                    // For Android/iOS, you would use something like React Native's Alert instead
+                    Alert.alert(
+                        'Confirmation',
+                        'Please confirm that you have saved the key file.',
+                        [
+                            { text: 'Cancel', onPress: () => reject(new Error('The key file must be saved before you can proceed.')), style: 'cancel' },
+                            { text: 'I Saved It', onPress: () => resolve() },
+                        ],
+                        { cancelable: false }
+                    );
+                }
+            });
+        };
+
+
+
         try {
-            const fileUri = FileSystem.documentDirectory + defaultFileName;
-            await FileSystem.writeAsStringAsync(fileUri, key);
-            Alert.alert('Success', `Key saved to file: ${defaultFileName}`);
+            if (Platform.OS === 'web') {
+                // Use the web method for downloading the file
+                saveAndShareForWeb(key, defaultFileName);
+                // Confirm key save for web
+                await confirmKeySave();
+                vaultOperationsInstance.alert('Success', `Key saved to file: ${defaultFileName}`);
+                console.log(`Key saved to file: ${defaultFileName}`);
+            } else {
+                // Use expo-file-system and expo-sharing for Android/iOS
+                const fileUri = FileSystem.documentDirectory + defaultFileName;
+                console.log("file url " + fileUri);
+                console.log("key " + key);
+                await FileSystem.writeAsStringAsync(fileUri, key);
+                console.log(`Key writeAsStringAsync: ${defaultFileName}`);
+
+                // After saving the file, use the Sharing API to share the file
+                await Sharing.shareAsync(fileUri);
+                // Confirm key save for web
+                await confirmKeySave();
+                vaultOperationsInstance.alert('Success', `Key saved to file: ${defaultFileName}`);
+                console.log(`Key saved to file: ${defaultFileName}`);
+            }
         } catch (error) {
-            Alert.alert('Error', `Could not save the key to a file: ${error.message}`);
+            throw new Error(`Could not save the key to a file: ${error.message}`);
         }
 
-        // Navigate to user table or next screen
-        this.displayUserTable(); // Make sure to define displayUserTable
+        // You might want to return something to indicate success, like the new user ID or a success message
+        return { success: true, userId: responseJson.documentId };
     }
 
     displayLoginScreen = () => {
@@ -75,32 +144,37 @@ class VaultOperations {
         this.navigation.navigate('MainWindow');
     }
 
-    displayUserTable = async () => {
-        console.log('displayUserTable2');
-        // Assuming 'UserTableScreen' is the name of your user table screen component
 
-        // Before navigating, you may want to load the data
+    accessUserVault = async (login, password) => {
         try {
-            await immuDBInstance.loadTableFromDatabase();
-            this.navigation.navigate('UserPasswordTable');
-        } catch (error) {
-            console.error('Failed to load table data:', error);
-            // Handle error - maybe stay on the current screen and show an error message
-        }
-    }
+            let keyFromFile = null;
+            try {
+                keyFromFile = await this.readKeyFromFile();
+                console.log("Key from file:", keyFromFile);
+                // Continue your logic here, such as accessing the vault
+            } catch (error) {
+                throw new Error("An error occurred while reading the key file:"+error);
+            }
 
 
-    accessUserVault = async (login, password, keyFromFile) => {
-        try {
+
+            // If keyFromFile is undefined or null, that means the file was not picked
+            if (!keyFromFile) {
+                throw new Error('No file was selected.');
+            }
+
+
             // Retrieve stored data for the given login
             const storedData = await immuDBInstance.getUserDataFromDatabase(login);
+            console.log("Requested data login:", login);
+            console.log("Requested data password:", password);
+            console.log("Requested data keyFromFile:", keyFromFile);
             console.log("Stored Data:", storedData);
 
             const revisions = storedData?.revisions || [];
 
             if (revisions.length === 0) {
-                Alert.alert('Failure', 'No such vault exists.');
-                return;
+                throw new Error('No such vault exists.');
             }
 
             const firstRevision = revisions[0];
@@ -110,51 +184,138 @@ class VaultOperations {
             const passwordFromDB = document.password;
             const keyFromDB = document.key;
 
+
+
             if (loginFromDB === login && passwordFromDB === password && keyFromDB === keyFromFile) {
                 // If login is successful, save the user ID and navigate to the user table
                 // Assuming classRegistryInstance.setUserId is a method to save the user ID
-                console.log(document._id);
+                let newUserId = document._id;
+                console.log(newUserId);
                 console.log(classRegistryInstance);
-                classRegistryInstance.setUserId(document._id);
+                classRegistryInstance.setUserId(newUserId);
                 console.log(classRegistryInstance);
                 console.log("User id from data:", classRegistryInstance.getUserId());
 
                 // Navigate to the user table
                 // Assuming this method is defined elsewhere in your application
-                this.displayUserTable();
+                // You might want to return something to indicate success, like the new user ID or a success message
+                return { success: true, userId: newUserId };
             } else {
-                Alert.alert('Failure', 'Failed to access the vault. Invalid credentials or key.');
+                throw new Error('Failed to access the vault. Invalid credentials or key.');
             }
         } catch (error) {
             console.error(`An exception occurred: ${error}`);
-            Alert.alert('Error', `An error occurred: ${error}`);
+            throw new Error(`An error occurred: ${error}`);
         }
     }
-
-    readKeyFromFile = async () => {
-        try {
-            // Use a library like react-native-document-picker to select a file
-            const res = await DocumentPicker.pick({
-                type: [DocumentPicker.types.allFiles],
-            });
-
-            // Then read the file's contents
-            const keyFromFile = await RNFS.readFile(res.uri);
-
-            // Now you can use this key to access the vault
-            // You would get the login and password from your component's state or context
-            this.accessUserVault(this.state.login, this.state.password, keyFromFile);
-        } catch (err) {
-            if (DocumentPicker.isCancel(err)) {
-                console.log('User cancelled the picker');
+    readKeyFromFile = () => {
+        return new Promise((resolve, reject) => {
+            if (Platform.OS === 'web') {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) {
+                        reject('No file selected');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const keyFromFile = e.target.result;
+                        resolve(keyFromFile);
+                    };
+                    reader.onerror = (err) => {
+                        reject(err);
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
             } else {
-                console.error('Error reading key file:', err);
-                Alert.alert('Error', 'An error occurred while reading the key file.');
+                // Mobile logic using react-native-document-picker and RNFS
+                DocumentPicker.pick({
+                    type: [DocumentPicker.types.allFiles],
+                })
+                    .then((res) => {
+                        return RNFS.readFile(res.uri);
+                    })
+                    .then((keyFromFile) => {
+                        resolve(keyFromFile);
+                    })
+                    .catch((err) => {
+                        if (DocumentPicker.isCancel(err)) {
+                            reject('User cancelled the picker');
+                        } else {
+                            reject(err);
+                        }
+                    });
             }
+        });
+    };
+
+
+    alert(title, message) {
+        // A helper function to determine if the environment is web or not
+        const isWeb = () => {
+            return Platform.OS === 'web';
+        };
+
+// A function that handles alerting and logging, with platform-dependent behavior
+        // Log with emojis regardless of the platform
+        console.log(`✅ ${title}: ${message}`);
+
+        // Use `alert` for web and `Alert.alert` for Android/iOS
+        if (isWeb()) {
+            alert(`${title}: ${message}`);
+        } else {
+            Alert.alert(title, message);
         }
+
     }
+
+    // Method to synchronize the table data with the database
+    synchronizeTableWithDatabase = async (localData) => {
+        try {
+            // Fetch existing data from the database
+            const existingData = await immuDBInstance.getDataByUserId(classRegistryInstance.getUserId());
+            if (existingData === null) {
+                console.error("Error: Failed to fetch existing data for user_id:" + classRegistryInstance.getUserId());
+                return;
+            }
+
+            console.log("Existing data:");
+            console.log(existingData);
+            console.log("Local data:");
+            console.log(localData);
+
+            // Merge records and update the database
+            const mergedData = immuDBInstance.mergeRecords(existingData, localData);
+
+
+            console.log("mergedData:");
+            console.log(mergedData);
+
+            const response = await immuDBInstance.replaceRecords(mergedData, classRegistryInstance.getUserId());
+
+            console.log("response:");
+            console.log(response);
+
+
+            if (response.statusCode === 200 || response.transactionId!=undefined) {
+                // Handle success, update local state if needed
+                console.log("Successfully synced the table.");
+                // Call a method to update the state in UserPasswordTable component if necessary
+            } else {
+                console.error(`Error: Received status code ${response.statusCode}`);
+            }
+        } catch (error) {
+            console.error('Error syncing data:', error);
+        }
+    };
 }
 
 
+const vaultOperationsInstance = new VaultOperations();
 
-export default VaultOperations;
+export default vaultOperationsInstance;
+
+
