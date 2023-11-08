@@ -116,7 +116,10 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: '#FFF'
+        backgroundColor: '#FFF',
+        maxWidth: '100%', // Maximum width is 100% of the screen width
+        aspectRatio: 1, // Ensures that the width and height are equal
+        alignSelf: 'center', // Centers the square container
     },
     logoLabel: {
         fontSize: 24,

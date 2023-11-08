@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "chamber-of-secrets",
+    "name": "Chamber of Secrets",
     "slug": "chamber-of-secrets",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -17,7 +17,7 @@
     ],
     "ios": {
       "infoPlist": {
-        "NSPhotoLibraryAddUsageDescription": "This app needs access to the photo library to save files."
+        "NSPhotoLibraryAddUsageDescription": "This app needs access to the file library to save key files."
       },
       "supportsTablet": true
     },
