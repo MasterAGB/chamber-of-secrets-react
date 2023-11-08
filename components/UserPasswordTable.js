@@ -1,12 +1,23 @@
-import React, { useState,useEffect } from 'react';
-import { View, Text, Button, FlatList, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {
+    View,
+    Text,
+    Button,
+    FlatList,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    Dimensions
+} from 'react-native';
 import vaultOperationsInstance from '../logic/VaultOperations';
 import immuDBInstance from "../api/immudb";
 
-const UserPasswordTable = ({ navigation }) => {
+const UserPasswordTable = ({navigation}) => {
     const [data, setData] = useState([]);
     const [lastFetchedData, setLastFetchedData] = useState([]); // Store the last fetched data// Add a new state to track unsaved changes
     const [unsavedChanges, setUnsavedChanges] = useState(false);
+    const [focusedInputId, setFocusedInputId] = useState(null);
+
 
     vaultOperationsInstance.setNavigation(navigation);
 
@@ -15,6 +26,9 @@ const UserPasswordTable = ({ navigation }) => {
         try {
             let fetchedData = await immuDBInstance.loadTableFromDatabase(); // Implement this method in immuDBInstance
             // Ensure each item has an id
+            if (fetchedData === undefined) {
+                return;
+            }
             fetchedData = fetchedData.map(item => ({
                 id: item.id || Date.now() + Math.random(), // Create a unique ID if it's missing
                 ...item
@@ -34,18 +48,20 @@ const UserPasswordTable = ({ navigation }) => {
 
     // This function adds a new entry with empty values.
     const addEntry = () => {
-        let newVar = { id: Date.now(), username: '', password: '', website: '' };
+        let newVar = {id: Date.now(), username: '', password: '', website: ''};
         setData([...data ?? [], newVar]);
+        setUnsavedChanges(true); // Mark that there are unsaved changes
     };
 
     // This function removes an entry by id.
     const removeEntry = id => {
         setData(data.filter(item => item.id !== id));
+        setUnsavedChanges(true); // Mark that there are unsaved changes
     };
 
     // Function to log out (Placeholder for actual logic)
     const logout = () => {
-        vaultOperationsInstance.displayLoginScreen();
+        navigation.navigate('MainWindow');
     };
 
 // After data is synced successfully, reset unsaved changes
@@ -64,6 +80,7 @@ const UserPasswordTable = ({ navigation }) => {
 // Modify the input styles to highlight changes
     const inputStyle = (item) => {
         const originalItem = lastFetchedData.find(original => original.id === item.id);
+        const itemIsNew = !originalItem; // Check if the item is new
         const itemChanged = originalItem && (
             item.username !== originalItem.username ||
             item.password !== originalItem.password ||
@@ -71,14 +88,13 @@ const UserPasswordTable = ({ navigation }) => {
         );
         return [
             styles.input,
-            itemChanged ? styles.inputChanged : null // Apply changed styles if item has been edited
+            (itemChanged || itemIsNew) ? styles.inputChanged : null // Apply changed styles if item has been edited or is new
         ];
     };
 
-
     // Function to render each row in the table
-    const renderItem = ({ item }) => (
-        <View style={styles.row}>
+    const renderItem = ({item}) => (
+        <View style={styles.row} autoComplete="off">
             <TextInput
                 style={inputStyle(item)}
                 onChangeText={text => updateField('username', text, item.id)}
@@ -89,7 +105,9 @@ const UserPasswordTable = ({ navigation }) => {
             <TextInput
                 style={inputStyle(item)}
                 onChangeText={text => updateField('password', text, item.id)}
-                secureTextEntry
+                secureTextEntry={focusedInputId !== item.id} // Show text only for the focused input
+                onFocus={() => setFocusedInputId(item.id)}
+                onBlur={() => setFocusedInputId(null)}
                 value={item.password}
                 placeholder="Password"
                 autoComplete="off" // Add this line
@@ -102,7 +120,7 @@ const UserPasswordTable = ({ navigation }) => {
                 autoComplete="off" // Add this line
             />
             <TouchableOpacity onPress={() => removeEntry(item.id)}>
-                <Text style={styles.deleteButton}>X</Text>
+                <Text style={styles.deleteButton}>❌</Text>
             </TouchableOpacity>
         </View>
     );
@@ -112,7 +130,7 @@ const UserPasswordTable = ({ navigation }) => {
         const newData = data.map(item => {
             if (item.id === id) {
                 setUnsavedChanges(true); // Set unsaved changes to true
-                return { ...item, [field]: value };
+                return {...item, [field]: value};
             }
             return item;
         });
@@ -120,7 +138,7 @@ const UserPasswordTable = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} autoComplete="off">
             <FlatList
                 data={data}
                 renderItem={renderItem}
@@ -128,27 +146,45 @@ const UserPasswordTable = ({ navigation }) => {
                 ListHeaderComponent={
                     <View>
                         <Text style={styles.header}>Vault Manager</Text>
-                        <Button title="Add Entry" onPress={addEntry} />
+                        <Button title="➕ Add Entry" onPress={addEntry}/>
                     </View>
                 }
             />
+            <View style={styles.buttonContainer}>
+                <View style={styles.buttonWrapper}>
+                    <Button title="🗑️ Reset Data" onPress={resetTableData} disabled={!unsavedChanges}/>
+                </View>
+                <View style={styles.buttonWrapperRight}>
+                    <Button title="💾 Sync Data" onPress={handleSyncPress} disabled={!unsavedChanges}/>
+                </View>
+            </View>
 
-            {/* Conditionally show the Reset Data button if there are unsaved changes */}
-            {unsavedChanges && (
-                <Button title="Reset Data" onPress={resetTableData} />
-            )}
-            {/* Disable the Sync Data button if there are no unsaved changes */}
-            <Button title="Sync Data" onPress={handleSyncPress} disabled={!unsavedChanges} />
-            <Button title="Sign Out" onPress={logout} />
+            <Button title="⬅️ Sign Out" onPress={logout}/>
         </View>
     );
 };
+const screenWidth = Dimensions.get('window').width;
 
 const styles = StyleSheet.create({
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between', // This will space out your buttons evenly
+        padding: 0, // Add padding for aesthetics
+    },
+    buttonWrapper: {
+        flex: 1, // This will make each button expand to fill the space
+        marginRight: 5, // Add horizontal margin between buttons
+        marginBottom: 10
+    },
+    buttonWrapperRight: {
+        flex: 1, // This will make each button expand to fill the space
+        marginLeft: 5, // Add horizontal margin between buttons
+        marginBottom: 10
+    },
     container: {
         flex: 1,
         padding: 10,
-        backgroundColor: '#fff', // Assuming you want a white background
+        backgroundColor: '#fff',
     },
     header: {
         fontSize: 24,
@@ -167,28 +203,31 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1, // Dynamically allocate remaining space
+        flexShrink: 1, // Allow the input to shrink if necessary
         borderWidth: 0, // Remove borders
         padding: 8,
         margin: 0,
         marginHorizontal: 2, // Add horizontal margin between inputs
         backgroundColor: '#fff', // Light grey background for inputs
-        color: '#333', // Dark grey color for text
-
+        color: '#000', // Dark grey color for text
+        width: screenWidth / 3 - 30, // Divide the screen width by the number of inputs and subtract any margins
         borderLeftWidth: 1, // Only add bottom border to separate rows
         borderColor: '#e1e1e1', // Light grey color for the borders
     },
     inputChanged: {
-        backgroundColor: 'orange', // Or any other color to indicate a change
+        backgroundColor: '#ffd6d6', // Or any other color to indicate a change
     },
     deleteButton: {
         width: 30, // Set a fixed width for the delete button
         height: 30, // Set a fixed height to make it square
         justifyContent: 'center', // Center the 'X' text vertically
         alignItems: 'center', // Center the 'X' text horizontally
-        backgroundColor: 'red',
+        /*backgroundColor: 'red',*/
         color: 'white',
         marginLeft: 5, // Add some margin to the left of the delete button
-    },
+        textAlign: "center",
+        textAlignVertical: "center"
+    }
 });
 
 export default UserPasswordTable;

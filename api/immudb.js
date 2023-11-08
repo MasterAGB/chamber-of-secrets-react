@@ -1,5 +1,5 @@
-
 import classRegistryInstance from '../logic/ClassRegistry';
+
 class ImmuDB {
     constructor(apiKey, ledger, collection) {
         this.API_KEY = apiKey;
@@ -91,76 +91,6 @@ class ImmuDB {
         return this.saveDataToDatabase(data);
     };
 
-    createNewVault = async (login, password) => {
-        // In a real app, you would handle user input within the component state
-        // and pass the values to this method as arguments
-        // Here we mock them for simplicity
-
-        // Generate a secure key using a suitable method
-        const key = generateSecureKey(); // You need to define this function
-        console.log(`Generated random key: ${key}`);
-
-        // Check for empty login or password
-        if (!login || !password) {
-            vaultOperationsInstance.alert('Error', 'Login and password fields must not be empty.');
-            return;
-        }
-
-        // Check if a vault with this login already exists
-        const existingData = await this.getUserDataFromDatabase(login);
-        if (existingData && existingData.revisions && existingData.revisions.length > 0) {
-            vaultOperationsInstance.alert('Error', 'A vault with this login already exists.');
-            return;
-        }
-
-        // Store the login, password, and key in immudb
-        const data = {
-            login: login,
-            password: password,
-            key: key,
-            table_data: [
-                {
-                    id: 1,
-                    username: `${login}1`,
-                    password: 'examplePassword1',
-                    website: 'www.example1.com',
-                },
-                {
-                    id: 2,
-                    username: `${login}2`,
-                    password: 'examplePassword2',
-                    website: 'www.example2.com'
-                },
-                {
-                    id: 3,
-                    username: `${login}3`,
-                    password: 'examplePassword3',
-                    website: 'www.example3.com'
-                }
-            ]
-        };
-
-        const responseJson = await this.saveDataToDatabase(data);
-
-        if (!responseJson || !responseJson.documentId) {
-            vaultOperationsInstance.alert('Error', 'Failed to create a new vault.');
-            return;
-        }
-
-        // Set the user ID in your state management system
-        classRegistryInstance.setUserId(responseJson.documentId);
-
-        // Save the key to a file using react-native-fs or a similar library
-        // This will require the user to grant file system access permissions
-        const fileName = `${login}_key.txt`;
-        // You need to define the method saveKeyToFile which will handle the file system operations
-        this.saveKeyToFile(fileName, key);
-
-        vaultOperationsInstance.alert('Success', `Successfully created the vault. Your ID is: ${responseJson.documentId}.`);
-
-        // After creation, navigate to the user table or perform other actions as needed
-        this.navigateToUserTable(); // Define this navigation function based on your routing logic
-    };
 
     getDataByUserId = async (_id) => {
         const data = {
@@ -199,13 +129,13 @@ class ImmuDB {
             const responseJson = await response.json();
             const revisions = responseJson.revisions || [];
             if (revisions.length > 0) {
-                return revisions[0]; // Assuming the latest revision is what you want
+                return revisions[0];
             }
         } catch (error) {
             console.error("There was an error fetching the user data:", error);
         }
 
-        return null; // or you can throw an error as per your error handling strategy
+        return null;
     };
     modifyCollectionSchema = async () => {
         const data = {
@@ -218,7 +148,7 @@ class ImmuDB {
             indexes: [
                 {
                     fields: ['login'],
-                    isUnique: true // Assuming 'login' should be unique
+                    isUnique: true
                 }
             ]
         };
@@ -244,7 +174,7 @@ class ImmuDB {
             return responseJson;
         } catch (error) {
             console.error("Error: ", error);
-            return null; // or you can throw an error as per your error handling strategy
+            return null;
         }
     };
     saveDataToDatabase = async (data) => {
@@ -270,7 +200,7 @@ class ImmuDB {
             return responseJson;
         } catch (error) {
             console.error("Error: ", error);
-            return null; // or you can throw an error as per your error handling strategy
+            return null;
         }
     };
 
@@ -294,11 +224,10 @@ class ImmuDB {
             return responseJson;
         } catch (error) {
             console.error("Error: ", error);
-            return null; // or you can throw an error as per your error handling strategy
+            return null;
         }
     };
     getUserDataFromDatabase = async (login) => {
-        // Assuming that fetchCollectionMetadata is another method in this class
         const collectionInfo = await this.fetchCollectionMetadata();
         if (collectionInfo) {
             console.log("Got to retrieve collection info.");
@@ -346,7 +275,7 @@ class ImmuDB {
             return await response.json();
         } catch (error) {
             console.error(`Error: Received status code ${error}`);
-            return null; // or you can throw the error
+            return null;
         }
     };
 
@@ -385,13 +314,11 @@ class ImmuDB {
             });
 
 
-
-            if (!response.ok && response.status!==200) {
+            if (!response.ok && response.status !== 200) {
                 console.error("ERROR - status!=200");
                 console.log(response);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
 
 
             const jsonResponse = await response.json();
@@ -413,8 +340,6 @@ class ImmuDB {
     };
 
 
-
-    // Assuming 'this' is bound correctly in the context where these methods are defined
     checkStartup = async () => {
         // Only execute if no records exist in the DB
         if (!(await this.checkForExistingRecords())) {
@@ -472,7 +397,7 @@ class ImmuDB {
 
 
 }
-// Create the instance with your specific configuration
+
 const apiKey = 'default.NQ2l9fEGCUAKaPzzZogZtw.3nnnrusNQ1z-_k4zzpmiibr7m_MARH4wDlC_eyu0vvTmS7K7';
 const ledger = "default";
 const collection = "default";

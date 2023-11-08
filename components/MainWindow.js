@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import classRegistryInstance from '../logic/ClassRegistry';
 import vaultOperationsInstance from '../logic/VaultOperations';
 
 const MainWindow = ({ navigation }) => {
@@ -50,7 +49,7 @@ const MainWindow = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} autoComplete="off">
             <Text style={styles.logoLabel}>🪄 Chamber of Secrets 🪄</Text>
             <Text style={styles.logoSubLabel}>A Secure Vault Manager </Text>
 

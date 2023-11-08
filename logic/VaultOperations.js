@@ -1,14 +1,14 @@
 // VaultOperations.js
 import * as Sharing from 'expo-sharing';
-import immuDBInstance from '../api/ImmuDB';
+import immuDBInstance from '../api/immudb';
 import classRegistryInstance from '../logic/ClassRegistry';
 import {Alert, Platform} from 'react-native';
 import * as FileSystem from 'expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
+
 
 class VaultOperations {
-// VaultOperations.js
 
-    // Assuming navigation props are passed to your class in some way
     setNavigation(navigation) {
         this.navigation = navigation;
     }
@@ -22,8 +22,6 @@ class VaultOperations {
         }
         return randomCharacters;
     };
-
-    // Assuming that generateSecureKey and other relevant methods are already defined in this class
 
     async createNewVault(login, password) {
         // Validate input
@@ -97,15 +95,18 @@ class VaultOperations {
                         'Confirmation',
                         'Please confirm that you have saved the key file.',
                         [
-                            { text: 'Cancel', onPress: () => reject(new Error('The key file must be saved before you can proceed.')), style: 'cancel' },
-                            { text: 'I Saved It', onPress: () => resolve() },
+                            {
+                                text: 'Cancel',
+                                onPress: () => reject(new Error('The key file must be saved before you can proceed.')),
+                                style: 'cancel'
+                            },
+                            {text: 'I Saved It', onPress: () => resolve()},
                         ],
-                        { cancelable: false }
+                        {cancelable: false}
                     );
                 }
             });
         };
-
 
 
         try {
@@ -136,12 +137,7 @@ class VaultOperations {
         }
 
         // You might want to return something to indicate success, like the new user ID or a success message
-        return { success: true, userId: responseJson.documentId };
-    }
-
-    displayLoginScreen = () => {
-        // Assuming 'LoginScreen' is the name of your login screen component
-        this.navigation.navigate('MainWindow');
+        return {success: true, userId: responseJson.documentId};
     }
 
 
@@ -153,9 +149,8 @@ class VaultOperations {
                 console.log("Key from file:", keyFromFile);
                 // Continue your logic here, such as accessing the vault
             } catch (error) {
-                throw new Error("An error occurred while reading the key file:"+error);
+                throw new Error("An error occurred while reading the key file:" + error);
             }
-
 
 
             // If keyFromFile is undefined or null, that means the file was not picked
@@ -185,10 +180,8 @@ class VaultOperations {
             const keyFromDB = document.key;
 
 
-
             if (loginFromDB === login && passwordFromDB === password && keyFromDB === keyFromFile) {
                 // If login is successful, save the user ID and navigate to the user table
-                // Assuming classRegistryInstance.setUserId is a method to save the user ID
                 let newUserId = document._id;
                 console.log(newUserId);
                 console.log(classRegistryInstance);
@@ -196,10 +189,8 @@ class VaultOperations {
                 console.log(classRegistryInstance);
                 console.log("User id from data:", classRegistryInstance.getUserId());
 
-                // Navigate to the user table
-                // Assuming this method is defined elsewhere in your application
-                // You might want to return something to indicate success, like the new user ID or a success message
-                return { success: true, userId: newUserId };
+
+                return {success: true, userId: newUserId};
             } else {
                 throw new Error('Failed to access the vault. Invalid credentials or key.');
             }
@@ -209,7 +200,7 @@ class VaultOperations {
         }
     }
     readKeyFromFile = () => {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             if (Platform.OS === 'web') {
                 const input = document.createElement('input');
                 input.type = 'file';
@@ -231,23 +222,25 @@ class VaultOperations {
                 };
                 input.click();
             } else {
-                // Mobile logic using react-native-document-picker and RNFS
-                DocumentPicker.pick({
-                    type: [DocumentPicker.types.allFiles],
-                })
-                    .then((res) => {
-                        return RNFS.readFile(res.uri);
-                    })
-                    .then((keyFromFile) => {
-                        resolve(keyFromFile);
-                    })
-                    .catch((err) => {
-                        if (DocumentPicker.isCancel(err)) {
-                            reject('User cancelled the picker');
-                        } else {
-                            reject(err);
-                        }
+
+
+                try {
+                    const result = await DocumentPicker.getDocumentAsync({
+                        type: '*/*', // or specify MIME types
                     });
+
+                    if (result.type === 'success') {
+                        // Read the file using Expo's FileSystem
+                        const keyFromFile = await FileSystem.readAsStringAsync(result.uri);
+                        resolve(keyFromFile);
+                    } else {
+                        reject('User cancelled the picker');
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+
+
             }
         });
     };
@@ -300,7 +293,7 @@ class VaultOperations {
             console.log(response);
 
 
-            if (response.statusCode === 200 || response.transactionId!=undefined) {
+            if (response.statusCode === 200 || response.transactionId != undefined) {
                 // Handle success, update local state if needed
                 console.log("Successfully synced the table.");
                 // Call a method to update the state in UserPasswordTable component if necessary
