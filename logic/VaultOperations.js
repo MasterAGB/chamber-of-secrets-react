@@ -9,10 +9,6 @@ import * as DocumentPicker from 'expo-document-picker';
 
 class VaultOperations {
 
-    setNavigation(navigation) {
-        this.navigation = navigation;
-    }
-
     generateSecureKey = (length = 32) => {
         const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./:;<=>?@[]^_`{|}~";
         let randomCharacters = "";

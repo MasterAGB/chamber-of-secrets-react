@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "githubUrl": "https://github.com/MasterAGB/chamber-of-secrets-react",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",

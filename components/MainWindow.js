@@ -12,7 +12,6 @@ const MainWindow = ({ navigation }) => {
     const [errorRegister, setErrorRegister] = useState('');
     const [errorLogin, setErrorLogin] = useState('');
 
-    vaultOperationsInstance.setNavigation(navigation);
 
     // Function to handle the creation of a new vault
     const createNewVault = () => {
@@ -51,7 +50,7 @@ const MainWindow = ({ navigation }) => {
     return (
         <View style={styles.container} autoComplete="off">
             <Text style={styles.logoLabel}>🪄 Chamber of Secrets 🪄</Text>
-            <Text style={styles.logoSubLabel}>A Secure Vault Manager </Text>
+            <Text style={styles.logoSubLabel}>A Secure Vault Manager</Text>
 
             <Text style={styles.label}>Create a new vault:</Text>
             <TextInput

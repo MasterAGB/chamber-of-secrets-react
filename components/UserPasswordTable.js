@@ -19,7 +19,6 @@ const UserPasswordTable = ({navigation}) => {
     const [focusedInputId, setFocusedInputId] = useState(null);
 
 
-    vaultOperationsInstance.setNavigation(navigation);
 
     // This function will be called to fetch data from immudb when the component mounts
     const fetchTableData = async () => {

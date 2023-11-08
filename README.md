@@ -17,7 +17,7 @@ To run Chamber of Secrets on your local machine, you need to have Node.js, npm/y
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/chamber-of-secrets.git
+git clone https://github.com/masteragb/chamber-of-secrets.git
 
 # Go into the repository
 cd chamber-of-secrets
