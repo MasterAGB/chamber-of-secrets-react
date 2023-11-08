@@ -38,9 +38,6 @@ After running the project, you can:
 - Synchronize changes with the database or reset to the last saved state.
 - Sign out of the vault.
 
-## Developers adventures
-
-
 ## Development Challenges
 
 While working on the "Chamber of Secrets" app, several challenges were encountered which became key learning points in the development process. Here's a rundown of the challenges faced:
