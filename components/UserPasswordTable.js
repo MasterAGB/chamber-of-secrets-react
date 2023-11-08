@@ -184,6 +184,9 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 10,
         backgroundColor: '#fff',
+        maxWidth: '100%', // Maximum width is 100% of the screen width
+        aspectRatio: 1, // Ensures that the width and height are equal
+        alignSelf: 'center', // Centers the square container
     },
     header: {
         fontSize: 24,
@@ -212,6 +215,7 @@ const styles = StyleSheet.create({
         width: screenWidth / 3 - 30, // Divide the screen width by the number of inputs and subtract any margins
         borderLeftWidth: 1, // Only add bottom border to separate rows
         borderColor: '#e1e1e1', // Light grey color for the borders
+        minWidth: 30,
     },
     inputChanged: {
         backgroundColor: '#ffd6d6', // Or any other color to indicate a change
