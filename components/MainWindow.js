@@ -103,11 +103,11 @@ const MainWindow = ({ navigation }) => {
                 <Text style={styles.errorText}>{errorLogin}</Text>
             )}
 
-            {/* If you have a developer button */}
+            {/* If you have a developer button
              <Button
         title="Developer: open table"
         onPress={displayUserTable}
-      />
+      />*/}
         </View>
     );
 };

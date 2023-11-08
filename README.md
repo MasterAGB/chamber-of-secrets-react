@@ -85,4 +85,15 @@ While working on the "Chamber of Secrets" app, several challenges were encounter
 
 17. **Building and Deployment**: After overcoming these challenges, the focus shifted to building and deploying the app, with the anticipation of potential new hurdles.
 
+18. **Building the Application:**:
+    - Initially used the command `npm install -g eas-cli` to install the Expo Application Services (EAS) CLI globally.
+    - Created a build for Android using `eas build -p android` which generated an Android App Bundle (AAB) file.
+    - Learned that to produce an APK file, the command needed was `eas build -p android --profile preview`.
+     
+19. **Expo Doctor Warnings:**:
+    - Encountered a warning from `expo doctor` stating:
+     > The package "expo-modules-core" should not be installed directly in your project. It is a dependency of other Expo packages, which will install it automatically as needed.
+    - This warning indicated a misconfiguration in the `package.json`, where `expo-modules-core` was included as a direct dependency unnecessarily.
+
+
 These challenges were instrumental in enhancing the problem-solving skills necessary for modern app development, particularly in a React Native environment.
